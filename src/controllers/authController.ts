@@ -4,6 +4,7 @@ import Role from "../models/Role.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+//register
 export async function register(req: Request, res: Response) {
   try {
     const { username, fullName, email, password } = req.body as {
@@ -51,6 +52,7 @@ export async function register(req: Request, res: Response) {
   }
 }
 
+//login
 export async function login(req: Request, res: Response) {
   try {
     const { email, password } = req.body as {
@@ -92,5 +94,49 @@ export async function login(req: Request, res: Response) {
     return res.status(500).json({ message: "Login failed" });
   }
 }
+//refresh token
+export async function refreshToken(req: Request, res: Response) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+      userId: string;
+    };
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const newToken = jwt.sign(
+      { userId: String(user._id) },
+      process.env.JWT_SECRET as string,
+      {
+        expiresIn: "7d",
+      }
+    );
+    return res.status(200).json({ token: newToken });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Failed to refresh token" });
+  }
+}
+//logout
+export async function logout(req: Request, res: Response) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  // Invalidate token logic can be implemented here if using a token blacklist
+  return res.status(200).json({ message: "Logged out successfully" });
+}
+//forgot password
 
-export default { register, login };
+//reset password
+
+//login with google
+
+//me
+
+export default { register, login, refreshToken, logout };

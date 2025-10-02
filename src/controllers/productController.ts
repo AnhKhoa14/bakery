@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
-
+import OrderDetail from "../models/OrderDetail.js";
 export async function getProducts(req: Request, res: Response) {
   try {
     const {
@@ -125,14 +125,19 @@ export async function getCategories(req: Request, res: Response) {
 
 export async function searchProducts(req: Request, res: Response) {
   try {
-    const { query } = req.query;
-    if (!query || typeof query !== "string") {
+    const { q } = req.query;
+    if (!q || typeof q !== "string") {
       return res.status(400).json({ message: "Query parameter is required" });
     }
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
     const products = await Product.find({
-      name: { $regex: query, $options: "i" },
+      name: { $regex: q, $options: "i" },
       isDeleted: false,
-    });
+    })
+      .skip(skip)
+      .limit(limit);
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: "Error searching products" });
@@ -150,6 +155,62 @@ export async function viewReviewProducts(req: Request, res: Response) {
   }
 }
 
+export async function bestSellerProducts(req: Request, res: Response) {
+  try {
+    const limit = Number(req.query.limit) || 10;
+    const bestSeller = await OrderDetail.aggregate([
+      {
+        $group: {
+          _id: "$product",
+          totalSold: { $sum: "$quantity" },
+        },
+      },
+      {
+        $sort: { totalSold: -1 },
+      },
+      {
+        $limit: limit,
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      {
+        $unwind: "$product",
+      },
+      {
+        $project: {
+          _id: 0,
+          productId: "$product._id",
+          name: "$product.name",
+          price: "$product.price",
+          totalSold: 1,
+        },
+      },
+    ]).limit(10);
+    res.status(200).json(bestSeller);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching best seller products" });
+  }
+}
+
+export async function newArrivalProducts(req: Request, res: Response) {
+  try {
+    const limit = Number(req.query.limit) || 10;
+    const newArrivals = await Product.find({ isDeleted: false })
+      .sort({ createdAt: -1 })
+      .limit(limit);
+    res.status(200).json(newArrivals);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching new arrival products" });
+  }
+}
+
+
 export default {
   getProducts,
   getProductById,
@@ -159,4 +220,6 @@ export default {
   getCategories,
   searchProducts,
   viewReviewProducts,
+  bestSellerProducts,
+  newArrivalProducts,
 };

@@ -17,6 +17,8 @@ export interface IUser extends Document {
   updatedAt: Date;
   isDeleted: boolean;
   expiredCode?: Date;
+  forgotPasswordToken?: string;
+  forgotPasswordTokenExpiry?: Date;
 }
 
 const userSchema: Schema<IUser> = new Schema<IUser>(
@@ -36,6 +38,8 @@ const userSchema: Schema<IUser> = new Schema<IUser>(
     updatedAt: { type: Date, default: Date.now },
     isDeleted: { type: Boolean, default: false },
     expiredCode: { type: Date },
+    forgotPasswordToken: { type: String },
+    forgotPasswordTokenExpiry: { type: Date },
   },
   {
     timestamps: false,

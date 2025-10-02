@@ -1,20 +1,23 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
-
-// Tạo interface để mở rộng Request (thêm user)
-export interface AuthRequest extends Request {
-  user?: string | JwtPayload;
-}
+import { JwtPayloadWithRole } from "../types/jwt";
+import { AuthRequest } from "../types/auth";
 
 // Middleware xác thực token
-export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction): void => {
+export const authenticateToken = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void => {
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    res.status(401).json({ error: "Authorization header missing or malformed" });
+  if (!authHeader?.startsWith("Bearer ")) {
+    res
+      .status(401)
+      .json({ error: "Authorization header missing or malformed" });
     return;
   }
 
-  const idToken = authHeader.split("Bearer ")[1];
+  const idToken = authHeader.split(" ")[1];
   const jwtSecret = process.env.JWT_SECRET;
   if (!jwtSecret) {
     res.status(500).json({ error: "JWT secret not configured" });
@@ -22,10 +25,10 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
   }
 
   try {
-    const decoded = jwt.verify(idToken, jwtSecret);
-    req.user = decoded; // gán payload vào req.user
+    const decoded = jwt.verify(idToken, jwtSecret) as JwtPayloadWithRole;
+    req.user = decoded;
     next();
-  } catch (error) {
+  } catch {
     res.status(403).json({ error: "Invalid token" });
   }
 };
@@ -33,9 +36,11 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
 // Middleware phân quyền theo role
 export const allowRoles = (...allowedRoles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    const userRole = (req.user as any)?.role;
+    const userRole = req.user?.role;
     if (!userRole || !allowedRoles.includes(userRole)) {
-      res.status(403).json({ error: "Access denied: insufficient permissions" });
+      res
+        .status(403)
+        .json({ error: "Access denied: insufficient permissions" });
       return;
     }
     next();

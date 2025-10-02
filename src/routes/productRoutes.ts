@@ -7,7 +7,9 @@ import {
   deleteProduct,
   getCategories,
   searchProducts,
-  viewReviewProducts
+  viewReviewProducts,
+  bestSellerProducts,
+  newArrivalProducts,
 } from "../controllers/productController.js";
 import { authenticateToken, allowRoles } from "../middlewares/authentication.js";
 const router = Router();
@@ -15,12 +17,13 @@ const router = Router();
 router.get("/categories", getCategories);
 router.get("/search", searchProducts);
 router.get("/reviews", viewReviewProducts);
-
+router.get("/best-sellers", bestSellerProducts);
+router.get("/new-arrivals", newArrivalProducts);
 router.get("/", getProducts);
 router.get("/:id", getProductById);
-router.post("/", authenticateToken, allowRoles("admin"), createProduct);
-router.put("/:id", updateProduct);
-router.delete("/:id", deleteProduct);
+router.post("/", authenticateToken, allowRoles("ADMIN"), createProduct);
+router.put("/:id", authenticateToken, allowRoles("ADMIN"), updateProduct);
+router.delete("/:id", authenticateToken, allowRoles("ADMIN"), deleteProduct);
 
 
 export default router;

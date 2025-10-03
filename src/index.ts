@@ -8,6 +8,8 @@ import { seedCategories } from "./data/seedCategory.js";
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
+import { seedOrderStatuses } from "./data/seedOrderStatus.js";
 dotenv.config();
 
 const app = express();
@@ -18,15 +20,17 @@ app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
 // Connect to the database
 connectDB()
-  // .then(async () => {
-  //   await seedRoles();
-  //   await seedCategories();
-  // })
+  .then(async () => {
+    // await seedRoles();
+    // await seedCategories();
+    // await seedOrderStatuses();
+  })
   .catch((error) => {
     console.error("Failed to connect to the database:", error);
   });

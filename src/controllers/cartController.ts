@@ -1,12 +1,11 @@
 import type { Request, Response } from "express";
-import Cart from "../models/Cart";
-import CartItem from "../models/CartItem";
+import Cart from "../models/Cart.js";
+import CartItem from "../models/CartItem.js";
 
 // lấy cart của user kèm cart items
 export const getCart = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
-
     // tìm giỏ hàng theo user
     const cart = await Cart.findOne({ user: userId, isDeleted: false });
     if (!cart) {
@@ -69,7 +68,6 @@ export const addToCart = async (req: Request, res: Response) => {
     }
     res.status(201).json({
       message: "Added to cart successfully",
-      cartId: cart._id,
       cartItem,
     });
   } catch (error) {
@@ -89,8 +87,8 @@ export const updateCartItemQuantity = async (req: Request, res: Response) => {
     }
 
     if (quantity <= 0) {
-        await cartItem.deleteOne();
-        return res.json({ message: "Cart item removed from cart" });
+      await cartItem.deleteOne();
+      return res.json({ message: "Cart item removed from cart" });
     }
     cartItem.quantity = quantity;
     await cartItem.save();

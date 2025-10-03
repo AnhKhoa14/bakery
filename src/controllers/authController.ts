@@ -3,7 +3,9 @@ import User from "../models/User.js";
 import Role from "../models/Role.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { sendForgotPasswordEmail } from "../utils/mailer.js";
+import { sendConfirmationEmail, sendForgotPasswordEmail } from "../utils/mailer.js";
+import { randomBytes, randomInt } from "crypto";
+import Cart from "../models/Cart.js";
 
 //register
 export async function register(req: Request, res: Response) {
@@ -27,25 +29,21 @@ export async function register(req: Request, res: Response) {
       username,
       fullName,
       email,
-      passwordHash,
+      password: passwordHash,
       role: customerRole._id,
+      isVerified: false,
     });
-    const token = jwt.sign(
-      { userId: String(user._id) },
-      process.env.JWT_SECRET as string,
-      {
-        expiresIn: "7d",
-      }
-    );
+    const verifyCode = randomInt(100000, 999999).toString();
+    user.verifyCode = verifyCode;
+    user.expiredCode = new Date(Date.now() + 10 * 60 * 1000); // 10 phút
+    await user.save();
+    //send email
+    await sendConfirmationEmail(user.email, user.fullName || user.username, verifyCode);
+    //tạo cart cho user
+    const cart = new Cart({ user: user._id });
+    await cart.save();
     return res.status(201).json({
-      token,
-      user: {
-        id: String(user._id),
-        username: user.username,
-        fullName: user.fullName,
-        email: user.email,
-        role: customerRole.name,
-      },
+      message: "Registration successfully. Please check your email for verification code",
     });
   } catch (error) {
     console.log(error);
@@ -147,8 +145,8 @@ export async function forgotPassword(req: Request, res: Response) {
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
-    const forgotPasswordToken = Math.random().toString(36).substring(2, 8); //6 ký tự
-    const forgotPasswordTokenExpiry = new Date(Date.now() + 600); // 10 phút
+    const forgotPasswordToken = randomBytes(16).toString("hex").toUpperCase(); //6 ký tự
+    const forgotPasswordTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 phút
     user.forgotPasswordToken = forgotPasswordToken;
     user.forgotPasswordTokenExpiry = forgotPasswordTokenExpiry;
     await user.save();
@@ -176,12 +174,18 @@ export async function resetPassword(req: Request, res: Response) {
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
-    if (user.forgotPasswordToken !== token) {
+    if (user.forgotPasswordToken !== token.toUpperCase()) {
       return res.status(400).json({ message: "Invalid token" });
     }
-    if (!user.forgotPasswordTokenExpiry) {
+    if (
+      !user.forgotPasswordTokenExpiry ||
+      user.forgotPasswordTokenExpiry < new Date()
+    ) {
       return res.status(400).json({ message: "Token expired" });
     }
+    // if(newPassword.length < 8){
+    //   return res.status(400).json({ message: "Password must be at least 8 characters" });
+    // }
     user.password = await bcrypt.hash(newPassword, 10);
     user.forgotPasswordToken = undefined;
     user.forgotPasswordTokenExpiry = undefined;
@@ -215,6 +219,31 @@ export async function me(req: Request, res: Response) {
     return res.status(500).json({ message: "Failed to retrieve user" });
   }
 }
+
+//verify code
+export async function verifyCode(req: Request, res: Response) {
+  try {
+    const { email, code } = req.body as { email: string; code: string };
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+    if (user.verifyCode !== code) {
+      return res.status(400).json({ message: "Invalid code" });
+    }
+    if (!user.expiredCode || user.expiredCode < new Date()) {
+      return res.status(400).json({ message: "Code expired" });
+    }
+    user.isVerified = true;
+    user.verifyCode = undefined;
+    user.expiredCode = undefined;
+    await user.save();
+    return res.status(200).json({ message: "Email verified successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+}
+
 export default {
   register,
   login,
@@ -223,4 +252,5 @@ export default {
   forgotPassword,
   resetPassword,
   me,
+  verifyCode
 };

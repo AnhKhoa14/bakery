@@ -36,3 +36,21 @@ export async function sendForgotPasswordEmail(
     html,
   });
 }
+
+export async function sendConfirmationEmail(
+  to: string,
+  name: string,
+  code: string
+) {
+  const templatePath = path.join(__dirname, "../views/verifyCode.html");
+  let html = await readFile(templatePath, "utf-8");
+
+  html = html.replace("{{name}}", name).replace("{{code}}", code);
+
+  return transporter.sendMail({
+    from: `"Support" <${process.env.USER_EMAIL}>`,
+    to,
+    subject: "Confirm your email",
+    html,
+  });
+}

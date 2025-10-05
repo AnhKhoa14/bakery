@@ -12,6 +12,8 @@ import {
 import { authenticateToken, allowRoles } from "../middlewares/authentication.js";
 
 const router = Router();
+router.get("/statistics", authenticateToken, allowRoles("admin"), getOrderStatistics);
+
 
 router.post("/", authenticateToken, allowRoles("customer"), createOrder);
 router.get("/user/:userId", authenticateToken, allowRoles("customer"), getOrdersByUser);
@@ -20,6 +22,5 @@ router.get("/:orderId", authenticateToken, allowRoles("customer", "admin"), getO
 router.put("/:orderId/status", authenticateToken, allowRoles("admin"), updateOrderStatus);
 router.delete("/:orderId", authenticateToken, allowRoles("admin"), cancelOrder);
 router.get("/track/:orderId", authenticateToken, allowRoles("customer", "admin"), trackOrder);
-router.get("/statistics", authenticateToken, allowRoles("admin"), getOrderStatistics);
 
 export default router;

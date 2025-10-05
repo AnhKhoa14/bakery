@@ -87,6 +87,7 @@ export async function popularCategories(req: Request, res: Response) {
       .limit(5);
     res.json(categories);
   } catch (error) {
+    console.log("Error fetching popular categories:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }

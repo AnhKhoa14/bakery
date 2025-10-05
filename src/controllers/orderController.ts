@@ -3,39 +3,46 @@ import User from "../models/User.js";
 import OrderStatus from "../models/OrderStatus.js";
 import PaymentMethod from "../models/PaymentMethod.js";
 import type { Request, Response } from "express";
+import OrderDetail from "../models/OrderDetail.js";
 
 //create a new order
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { userId, paymentMethodId, totalPrice } = req.body;
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const orderStatus = await OrderStatus.findOne({ status: "Pending" });
-    if (!orderStatus) {
-      return res.status(404).json({ message: "Order status not found" });
-    }
-
-    const paymentMethod = await PaymentMethod.findById(paymentMethodId);
-    if (!paymentMethod) {
+    const { userId, paymentMethod, orderStatus, discount, items } = req.body;
+    const pm = await PaymentMethod.findById(paymentMethod);
+    if (!pm) {
       return res.status(404).json({ message: "Payment method not found" });
     }
-
-    const newOrder = new Order({
-      user: user._id,
-      orderStatus: orderStatus._id,
-      paymentMethod: paymentMethod._id,
-      totalPrice,
+    const newOrder = await Order.create({
+      user: userId,
+      totalPrice: items.reduce(
+        (sum: number, item: { price: number; quantity: number }) =>
+          sum + item.price * item.quantity,
+        0
+      ),
+      paymentMethod: pm._id,
+      orderStatus,
+      discount,
     });
 
-    const savedOrder = await newOrder.save();
-    res.status(201).json(savedOrder);
+    const orderDetails = await OrderDetail.insertMany(
+      items.map((item: any) => ({
+        order: newOrder._id,
+        product: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+        discount: item.discountId || null,
+      }))
+    );
+
+    res.status(201).json({
+      message: "Order created successfully",
+      order: newOrder,
+      orderDetails,
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to create order", error });
+    console.error("Error creating order:", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -132,20 +139,27 @@ export const cancelOrder = async (req: Request, res: Response) => {
 export const trackOrder = async (req: Request, res: Response) => {
   try {
     const { orderId } = req.params;
+
     const order = await Order.findById(orderId)
       .populate("orderStatus")
       .populate("paymentMethod")
-      .populate("discount")
-      .populate("user", "fullName email")
-      .populate({
-        path: "orderItems",
-        populate: { path: "product", select: "name price" },
-      });
+      // .populate("discount")
+      .populate("user", "fullName email");
+
     if (!order || order.isDeleted) {
       return res.status(404).json({ message: "Order not found" });
     }
-    res.status(200).json(order);
+
+    const orderDetails = await OrderDetail.find({ order: order._id, isDeleted: false })
+      .populate("product", "name price")
+      // .populate("discount");
+
+    res.status(200).json({
+      ...order.toObject(),
+      orderDetails,
+    });
   } catch (error) {
+    console.error("Error tracking order:", error);
     res.status(500).json({ message: "Failed to track order", error });
   }
 };

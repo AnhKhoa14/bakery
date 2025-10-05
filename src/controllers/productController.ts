@@ -114,7 +114,6 @@ export async function deleteProduct(req: Request, res: Response) {
 
 export async function getCategories(req: Request, res: Response) {
   try {
-    // const categories = await Product.distinct("categories");
     const categories = await Product.distinct("category");
     res.json(categories);
   } catch (error) {

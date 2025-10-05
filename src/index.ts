@@ -10,6 +10,7 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import { seedOrderStatuses } from "./data/seedOrderStatus.js";
+import { seedPaymentMethods } from "./data/seedPaymentMethod.js";
 dotenv.config();
 
 const app = express();
@@ -30,6 +31,7 @@ connectDB()
     // await seedRoles();
     // await seedCategories();
     // await seedOrderStatuses();
+    // await seedPaymentMethods();
   })
   .catch((error) => {
     console.error("Failed to connect to the database:", error);

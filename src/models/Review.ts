@@ -6,6 +6,7 @@ export interface IReview extends Document {
   comment?: string;
   createdAt: Date;
   updatedAt: Date;
+  likes: Types.ObjectId[];
   isDeleted: boolean;
 }
 const reviewSchema: Schema<IReview> = new Schema<IReview>(
@@ -14,6 +15,7 @@ const reviewSchema: Schema<IReview> = new Schema<IReview>(
     product: { type: Schema.Types.ObjectId, ref: "Product", required: true },
     rating: { type: Number, required: true, min: 1, max: 5 },
     comment: { type: String },
+    likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }

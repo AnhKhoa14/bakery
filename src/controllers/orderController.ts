@@ -4,11 +4,16 @@ import OrderStatus from "../models/OrderStatus.js";
 import PaymentMethod from "../models/PaymentMethod.js";
 import type { Request, Response } from "express";
 import OrderDetail from "../models/OrderDetail.js";
+import { AuthRequest } from "../types/auth.js";
 
 //create a new order
-export const createOrder = async (req: Request, res: Response) => {
+export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId, paymentMethod, orderStatus, discount, items } = req.body;
+    const { paymentMethod, orderStatus, discount, items } = req.body;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     const pm = await PaymentMethod.findById(paymentMethod);
     if (!pm) {
       return res.status(404).json({ message: "Payment method not found" });
@@ -47,15 +52,19 @@ export const createOrder = async (req: Request, res: Response) => {
 };
 
 //get order by user
-export const getOrdersByUser = async (req: Request, res: Response) => {
+export const getOrdersByUser = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     const orders = await Order.find({ user: userId, isDeleted: false })
       .populate("orderStatus")
       .populate("paymentMethod")
-      .populate("discount");
+      // .populate("discount");
     res.status(200).json(orders);
   } catch (error) {
+    console.error("Error fetching orders:", error);
     res.status(500).json({ message: "Failed to get orders", error });
   }
 };

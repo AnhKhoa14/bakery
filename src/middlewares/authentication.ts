@@ -26,7 +26,7 @@ export const authenticateToken = (
 
   try {
     const decoded = jwt.verify(idToken, jwtSecret) as JwtPayloadWithRole;
-    req.user = decoded;
+    req.user = { id: decoded.userId, role: decoded.role };
     next();
   } catch {
     res.status(403).json({ error: "Invalid token" });

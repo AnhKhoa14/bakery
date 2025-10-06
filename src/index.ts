@@ -9,6 +9,7 @@ import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import reviewsRoutes from "./routes/reviewRoutes.js";
 import { seedOrderStatuses } from "./data/seedOrderStatus.js";
 import { seedPaymentMethods } from "./data/seedPaymentMethod.js";
 dotenv.config();
@@ -22,6 +23,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/reviews", reviewsRoutes)
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });

@@ -16,7 +16,7 @@ router.get("/statistics", authenticateToken, allowRoles("admin"), getOrderStatis
 
 
 router.post("/", authenticateToken, allowRoles("customer"), createOrder);
-router.get("/user/:userId", authenticateToken, allowRoles("customer"), getOrdersByUser);
+router.get("/user", authenticateToken, allowRoles("customer"), getOrdersByUser);
 router.get("/", authenticateToken, allowRoles("admin"), getAllOrders);
 router.get("/:orderId", authenticateToken, allowRoles("customer", "admin"), getOrderById);
 router.put("/:orderId/status", authenticateToken, allowRoles("admin"), updateOrderStatus);

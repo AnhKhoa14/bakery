@@ -1,11 +1,15 @@
 import type { Request, Response } from "express";
 import Cart from "../models/Cart.js";
 import CartItem from "../models/CartItem.js";
+import { AuthRequest } from "../types/auth.js";
 
 // lấy cart của user kèm cart items
-export const getCart = async (req: Request, res: Response) => {
+export const getCart = async (req: AuthRequest, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
     // tìm giỏ hàng theo user
     const cart = await Cart.findOne({ user: userId, isDeleted: false });
     if (!cart) {

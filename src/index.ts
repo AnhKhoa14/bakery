@@ -5,13 +5,15 @@ import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import { seedRoles } from "./data/seedRole.js";
 import { seedCategories } from "./data/seedCategory.js";
+import { seedOrderStatuses } from "./data/seedOrderStatus.js";
+import { seedPaymentMethods } from "./data/seedPaymentMethod.js";
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import reviewsRoutes from "./routes/reviewRoutes.js";
-import { seedOrderStatuses } from "./data/seedOrderStatus.js";
-import { seedPaymentMethods } from "./data/seedPaymentMethod.js";
+import couponRoutes from "./routes/couponRoutes.js";
+import discountRoutes from "./routes/discountRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -23,7 +25,9 @@ app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
-app.use("/api/reviews", reviewsRoutes)
+app.use("/api/reviews", reviewsRoutes);
+app.use("/api/coupons", couponRoutes);
+app.use("/api/discounts", discountRoutes);
 app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
 });
